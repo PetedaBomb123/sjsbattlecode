@@ -1,0 +1,15 @@
+/*
+*@param calls the number of bullets needed to win and makes a decision in this regard.
+*
+*
+*/
+public static void victoryPoints(){
+	int victoryPointsLeft = 1000 - getTeamVictoryPoints();   //This calculates remaining points in the game. There might be an issue with the calling of this method
+	
+	//is possible to win?
+	int victoryPointsPossible = getTeamBullets()/10;    	 //Probably can be cleaned a little to save bytecode
+	if (victoryPointsLeft < victoryPointsPossible){
+		donate(float getTeamBullets());						//This may not need the float thing
+	}
+
+}

@@ -1,3 +1,4 @@
+//can someone figure out how to change the player name?
 package examplefuncsplayer;
 import battlecode.common.*;
 

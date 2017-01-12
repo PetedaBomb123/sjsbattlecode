@@ -31,6 +31,8 @@ public strictfp class RobotPlayer {
             case LUMBERJACK:
                 runLumberjack();
                 break;
+            case TANK:
+            	runTank();
         }
 	}
 
@@ -159,36 +161,79 @@ public strictfp class RobotPlayer {
                 if(robots.length > 0 && !rc.hasAttacked()) {
                     // Use strike() to hit all nearby robots!
                     rc.strike();
-                	}else if(trees.length > 0 && !rc.hasAttacked())
-                    {
-                		//use chop to chop down all nearby trees.
-                    	rc.chop(trees[0].location);
+/*Error Creating code block Need to implement in a seperate method         	
+               		//use chop to chop down all nearby trees.
+                } else if(trees[0].containedBullets > 0 && trees.length > 0 && !rc.hasAttacked()){
+                		rc.shake(trees[0].location);
+                			
+               		} else if(trees.length > 0) {				//this isn't clean here
+               			rc.chop(trees[0].location);
+ */             			
+               			//new method implementation
+               	} else if(trees.length > 0 && !rc.hasAttacked()) {
+               		lumberjackTrees(trees[0].location, trees[0].containedBullets);
+
+                } else {
+               		// No close robots, so search for robots within sight radius
+               		robots = rc.senseNearbyRobots(-1,enemy);
+
+               		// If there is a robot, move towards it
+                   		if(robots.length > 0) {
+                  		MapLocation myLocation = rc.getLocation();
+                   		MapLocation enemyLocation = robots[0].getLocation();
+                   		Direction toEnemy = myLocation.directionTo(enemyLocation);
+
+                   		tryMove(toEnemy);
                     	} else {
-                    		// No close robots, so search for robots within sight radius
-                    		robots = rc.senseNearbyRobots(-1,enemy);
-
-                    		// If there is a robot, move towards it
-                    		if(robots.length > 0) {
-                    			MapLocation myLocation = rc.getLocation();
-                    			MapLocation enemyLocation = robots[0].getLocation();
-                    			Direction toEnemy = myLocation.directionTo(enemyLocation);
-
-                    			tryMove(toEnemy);
-                    			} else {
                     	
                     	
                     	
-                    				// Move Randomly
-                    				tryMove(randomDirection());
-                    			}
+           				// Move Randomly
+           				tryMove(randomDirection());
                     	}
-                
+                }
+                    
 
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
 
             } catch (Exception e) {
                 System.out.println("Lumberjack Exception");
+                e.printStackTrace();
+            }
+        }
+    }
+    static void runTank() throws GameActionException {
+        System.out.println("I'm a tank!");
+        Team enemy = rc.getTeam().opponent();
+
+        // The code you want your robot to perform every round should be in this loop
+        while (true) {
+
+            // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
+            try {
+                MapLocation myLocation = rc.getLocation();
+
+                // See if there are any nearby enemy robots
+                RobotInfo[] robots = rc.senseNearbyRobots(-1, enemy);
+
+                // If there are some...
+                if (robots.length > 0) {
+                    // And we have enough bullets, and haven't attacked yet this turn...
+                    if (rc.canFireSingleShot()) {
+                        // ...Then fire a bullet in the direction of the enemy.
+                        rc.fireSingleShot(rc.getLocation().directionTo(robots[0].location));
+                    }
+                }
+
+                // Move randomly
+                tryMove(randomDirection());
+
+                // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
+                Clock.yield();
+
+            } catch (Exception e) {
+                System.out.println("Tank Exception");
                 e.printStackTrace();
             }
         }
@@ -285,4 +330,22 @@ public strictfp class RobotPlayer {
 
         return (perpendicularDist <= rc.getType().bodyRadius);
     }
+
+
+		/**
+		 * Method that determines a lumberjacks tree related actions
+		 * 
+		 * @param tree location from TreeInfo class. Array with information regarding nearby trees
+		 * @author Nathan Solomon
+		 * 
+		 * 
+		 */
+		static void lumberjackTrees(MapLocation location, int containedBullets) throws GameActionException{
+			if(containedBullets > 0){
+				rc.shake(location);
+    			
+			} else {			
+				rc.chop(location);
+			}
+		}
 }

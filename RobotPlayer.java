@@ -155,21 +155,19 @@ public strictfp class RobotPlayer {
 
                 // See if there are any enemy robots within striking range (distance 1 from lumberjack's radius)
                 RobotInfo[] robots = rc.senseNearbyRobots(RobotType.LUMBERJACK.bodyRadius+GameConstants.LUMBERJACK_STRIKE_RADIUS, enemy);
-                TreeInfo[] trees = rc.senseNearbyTrees(RobotType.LUMBERJACK.bodyRadius+GameConstants.LUMBERJACK_STRIKE_RADIUS);
+                TreeInfo[] trees = rc.senseNearbyTrees(GameConstants.LUMBERJACK_STRIKE_RADIUS);
                 
                 if(robots.length > 0 && !rc.hasAttacked()) {
                     // Use strike() to hit all nearby robots!
                     rc.strike();
-/*Error Creating code block Need to implement in a seperate method         	
-               		//use chop to chop down all nearby trees.
-                } else if(trees[0].containedBullets > 0 && trees.length > 0 && !rc.hasAttacked()){
-                		rc.shake(trees[0].location);
-                			
-               		} else if(trees.length > 0) {				//this isn't clean here
-               			rc.chop(trees[0].location);
- */             			
+
                			//new method implementation
                	} else if(trees.length > 0 && !rc.hasAttacked()) {
+               		MapLocation myLocation = rc.getLocation();
+               		MapLocation treeLocation = trees[0].location;
+               		Direction toTree = myLocation.directionTo(treeLocation);
+               		
+               		tryMove(toTree);
                		lumberjackTrees(trees[0].location, trees[0].containedBullets);
 
                 } else {
@@ -199,6 +197,8 @@ public strictfp class RobotPlayer {
             } catch (Exception e) {
                 System.out.println("Lumberjack Exception");
                 e.printStackTrace();
+                
+                
             }
         }
     }
@@ -348,6 +348,8 @@ public strictfp class RobotPlayer {
 				//chop nearby tree
 				rc.chop(location);
 			}
+			
+			
 		}
 		
 		/**

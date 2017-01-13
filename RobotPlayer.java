@@ -1,6 +1,7 @@
 package sjsbattlecodeV110;
 import battlecode.common.*;
 
+@SuppressWarnings("unused")
 public strictfp class RobotPlayer {
     static RobotController rc;
 
@@ -8,7 +9,6 @@ public strictfp class RobotPlayer {
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
      * If this method returns, the robot dies!
     **/
-    @SuppressWarnings("unused")
     public static void run(RobotController rc) throws GameActionException {
 
         // This is the RobotController object. You use it to perform actions from this robot,
@@ -32,6 +32,7 @@ public strictfp class RobotPlayer {
                 break;
             case TANK:
             	runTank();
+            	break;
         }
 	}
 
@@ -154,7 +155,7 @@ public strictfp class RobotPlayer {
             try {
 
                 // See if there are any enemy robots within striking range (distance 1 from lumberjack's radius)
-                RobotInfo[] robots = rc.senseNearbyRobots(RobotType.LUMBERJACK.bodyRadius+GameConstants.LUMBERJACK_STRIKE_RADIUS, enemy);
+                RobotInfo[] robots = rc.senseNearbyRobots(GameConstants.LUMBERJACK_STRIKE_RADIUS, enemy);
                 TreeInfo[] trees = rc.senseNearbyTrees(GameConstants.LUMBERJACK_STRIKE_RADIUS);
                 
                 if(robots.length > 0 && !rc.hasAttacked()) {
@@ -163,10 +164,9 @@ public strictfp class RobotPlayer {
 
                			//new method implementation
                	} else if(trees.length > 0 && !rc.hasAttacked()) {
-               		MapLocation myLocation = rc.getLocation();
-               		Direction toTree = myLocation.directionTo(trees[0].location);
-               		
-               		tryMove(toTree);
+               		//moves toward the nearest tree
+               		moveTowardObject(trees[0].location);
+               		//performs tree related actions
                		lumberjackTrees(trees[0].location, trees[0].containedBullets);
 
                 } else {
@@ -175,17 +175,19 @@ public strictfp class RobotPlayer {
 
                		// If there is a robot, move towards it
                    		if(robots.length > 0) {
-                  		MapLocation myLocation = rc.getLocation();
-                   		MapLocation enemyLocation = robots[0].getLocation();
-                   		Direction toEnemy = myLocation.directionTo(enemyLocation);
-
-                   		tryMove(toEnemy);
+                   			//moves the robot toward the nearest robot
+                   			moveTowardObject(robots[0].getLocation());
                     	} else {
+                    		//No close tree, so search for trees within sight radius
+                    		trees = rc.senseNearbyTrees(RobotType.LUMBERJACK.sensorRadius);
+                    		if(trees.length > 0) {
+                        		//Move toward trees.
+                        		moveTowardObject(trees[0].location);
+                    		} else {
+                   				// Move Randomly
+                   				tryMove(randomDirection());
+                    		}
                     	
-                    	
-                    	
-           				// Move Randomly
-           				tryMove(randomDirection());
                     	}
                 }
                     
@@ -297,13 +299,13 @@ public strictfp class RobotPlayer {
     }
 
     /**
-     * A slightly more complicated example function, this returns true if the given bullet is on a collision
+     	* A slightly more complicated example function, this returns true if the given bullet is on a collision
      * course with the current robot. Doesn't take into account objects between the bullet and this robot.
      *
      * @param bullet The bullet in question
      * @return True if the line of the bullet's path intersects with this robot's current position.
      */
-    static boolean willCollideWithMe(BulletInfo bullet) {
+    	static boolean willCollideWithMe(BulletInfo bullet) {
         MapLocation myLocation = rc.getLocation();
 
         // Get relevant bullet information
@@ -327,8 +329,7 @@ public strictfp class RobotPlayer {
         float perpendicularDist = (float)Math.abs(distToRobot * Math.sin(theta)); // soh cah toa :)
 
         return (perpendicularDist <= rc.getType().bodyRadius);
-    }
-
+    	}
 
 		/**
 		 * Method that determines a lumberjacks tree related actions
@@ -366,7 +367,25 @@ public strictfp class RobotPlayer {
 			if (victoryPointsLeft < victoryPointsPossible){
 				rc.donate(victoryPointsPossible*10);		//This may not need the float thing
 			}
+		}	
+		
+		/**
+		 * Method that moves a unit toward a designated target
+		 * 
+		 * @author Nathan Solomon
+		 * @version V1
+		 * 
+		 */
+		public static void moveTowardObject(MapLocation objectLocation) throws GameActionException{
+			//Get my location
+      		MapLocation myLocation = rc.getLocation();
+      		//Get object location
+       		Direction toObject = myLocation.directionTo(objectLocation);
+       		//move to location
+       		tryMove(toObject);
 
 		}
-		
+
 }
+		
+

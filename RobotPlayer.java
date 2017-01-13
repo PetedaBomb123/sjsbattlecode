@@ -1,5 +1,5 @@
 //can someone figure out how to change the player name?
-package examplefuncsplayer;
+package sjsbattlecodeV100;
 import battlecode.common.*;
 
 public strictfp class RobotPlayer {

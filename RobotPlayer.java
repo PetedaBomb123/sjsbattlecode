@@ -1,4 +1,3 @@
-//can someone figure out how to change the player name?
 package sjsbattlecodeV100;
 import battlecode.common.*;
 
@@ -337,15 +336,36 @@ public strictfp class RobotPlayer {
 		 * 
 		 * @param tree location from TreeInfo class. Array with information regarding nearby trees
 		 * @author Nathan Solomon
-		 * 
+		 * @version V3
 		 * 
 		 */
 		static void lumberjackTrees(MapLocation location, int containedBullets) throws GameActionException{
 			if(containedBullets > 0){
+				//shake nearby tree
 				rc.shake(location);
     			
 			} else {			
+				//chop nearby tree
 				rc.chop(location);
 			}
 		}
+		
+		/**
+		 * Method that determines remaining victory points needed and other related statistics
+		 * 
+		 * @author Nathan Solomon
+		 * @version V2
+		 * 
+		 */
+		public static void victoryPoints() throws GameActionException{
+			int victoryPointsLeft = 1000 - rc.getTeamVictoryPoints();   //This calculates remaining points in the game.
+			
+			//is possible to win?
+			int victoryPointsPossible = (int)(rc.getTeamBullets()/10); //calculates maximum donation
+			if (victoryPointsLeft < victoryPointsPossible){
+				rc.donate(victoryPointsPossible*10);		//This may not need the float thing
+			}
+
+		}
+		
 }

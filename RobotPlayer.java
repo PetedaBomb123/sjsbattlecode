@@ -1,4 +1,4 @@
-package sjsbattlecodeV100;
+package sjsbattlecodeV110;
 import battlecode.common.*;
 
 public strictfp class RobotPlayer {

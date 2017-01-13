@@ -164,8 +164,7 @@ public strictfp class RobotPlayer {
                			//new method implementation
                	} else if(trees.length > 0 && !rc.hasAttacked()) {
                		MapLocation myLocation = rc.getLocation();
-               		MapLocation treeLocation = trees[0].location;
-               		Direction toTree = myLocation.directionTo(treeLocation);
+               		Direction toTree = myLocation.directionTo(trees[0].location);
                		
                		tryMove(toTree);
                		lumberjackTrees(trees[0].location, trees[0].containedBullets);

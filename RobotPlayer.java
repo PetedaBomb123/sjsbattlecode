@@ -585,6 +585,14 @@ public strictfp class RobotPlayer {
 
 
 
+
 }
 
-
+		public static void plantCircle() throws GameActionException{
+			//try present location
+			if(rc.isCircleOccupiedExceptByThisRobot(rc.getLocation(),(2*GameConstants.BULLET_TREE_RADIUS)+(2*RobotType.GARDENER.bodyRadius))){
+				
+			}
+		
+		}
+}

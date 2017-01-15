@@ -83,6 +83,12 @@ public strictfp class RobotPlayer {
 
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+            	//Win Donation if possible
+            	victoryPoints();
+            	//Last round donate
+            	if((rc.getRoundLimit()-10) < rc.getRoundNum()){
+            		rc.donate(rc.getTeamBullets()-(rc.getTeamBullets()%10));
+            	}
 
                 // Generate a random direction
                 Direction dir = randomDirection();
@@ -494,7 +500,7 @@ public strictfp class RobotPlayer {
         //is possible to win?
         int victoryPointsPossible = (int)(rc.getTeamBullets()/10); //calculates maximum donation
         if (victoryPointsLeft < victoryPointsPossible){
-            rc.donate(victoryPointsPossible*10);		//This may not need the float thing
+            rc.donate((float)(victoryPointsPossible*10));		//This may not need the float thing
         }
     }
 

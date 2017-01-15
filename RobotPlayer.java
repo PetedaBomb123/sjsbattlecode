@@ -516,7 +516,7 @@ public strictfp class RobotPlayer {
     /**This method returns the x value of a MapLocation
      *
      * @author Peter Buckman
-     * @param a map location
+     * @param map location of point that we need an x value for
      * @return the x coordinate of that map location
      */
 
@@ -544,7 +544,7 @@ public strictfp class RobotPlayer {
      *
      * @author Peter Buckman
      * @param location
-     * @return
+     * @return y value of the map location
      */
     public static int getY(MapLocation location)
     {
@@ -586,7 +586,7 @@ public strictfp class RobotPlayer {
 
 
 
-}
+
 
 		public static void plantCircle() throws GameActionException{
 			//try present location

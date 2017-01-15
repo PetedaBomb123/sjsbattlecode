@@ -118,6 +118,8 @@ public strictfp class RobotPlayer {
 
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+            	
+            	//plantCircle();
 
 
 
@@ -545,6 +547,7 @@ public strictfp class RobotPlayer {
      * @author Peter Buckman
      * @param location
      * @return y value of the map location
+     * @version V1
      */
     public static int getY(MapLocation location)
     {
@@ -580,19 +583,44 @@ public strictfp class RobotPlayer {
     }
 
 
+    	public static int determineGardenerStatus() throws GameActionException{
+    		int status = 2;
+    		rc.broadcast(rc.getID(), status);
+    		return rc.readBroadcast(rc.getID());
+    	}
 
 
-
-
-
-
-
-
+    	/**
+    	 * Method to show a gardener how to plant trees in a circle. 
+    	 * 
+    	 * @author Nathan Solomon
+    	 * @version V1
+    	 * @throws GameActionException
+    	 */
 		public static void plantCircle() throws GameActionException{
-			//try present location
-			if(rc.isCircleOccupiedExceptByThisRobot(rc.getLocation(),(2*GameConstants.BULLET_TREE_RADIUS)+(2*RobotType.GARDENER.bodyRadius))){
-				
+			if(determineGardenerStatus() == 1){
+				//try present location (finishes method if can't or shouldn't plant)
+				if(rc.isCircleOccupiedExceptByThisRobot(rc.getLocation(),(2*GameConstants.BULLET_TREE_RADIUS)+(2*RobotType.GARDENER.bodyRadius))){
+					rc.plantTree(Direction.getEast());
+					rc.broadcast(rc.getID(), 2);
+					directionToMove = new Direction(0);
+			
+					
+				}
+			} else if(determineGardenerStatus() == 2) {
+				for(int i = 1; i < 6; i++){
+					if(rc.canPlantTree(directionToMove)){
+						rc.plantTree(directionToMove);
+						break;
+					
+					}
+					else {
+						directionToMove = directionToMove.rotateLeftRads((float)(2*Math.PI/5));
+					}
+				}
 			}
 		
+			
+	
 		}
 }

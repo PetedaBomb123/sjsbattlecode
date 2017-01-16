@@ -1,4 +1,4 @@
-package sjsbattlecodeV111;
+package sjsbattlecodeV120;
 import battlecode.common.*;
 import java.util.Random;
 import java.lang.Integer;

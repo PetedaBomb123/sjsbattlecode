@@ -1,6 +1,7 @@
 package sjsbattlecodeV111;
 import battlecode.common.*;
 import java.util.Random;
+import java.lang.Integer;
 
 @SuppressWarnings("unused")
 public strictfp class RobotPlayer {
@@ -124,8 +125,8 @@ public strictfp class RobotPlayer {
 
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
-            	
-            	//plantCircle();
+            	setGardenerStatus();
+            	plantCircle();
 
 
 
@@ -154,7 +155,7 @@ public strictfp class RobotPlayer {
 
 
                 // Move randomly
-                tryMove(randomDirection());
+                //tryMove(randomDirection());
 
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
@@ -587,12 +588,51 @@ public strictfp class RobotPlayer {
 
 
     }
-
-
-    	public static int determineGardenerStatus() throws GameActionException{
-    		int status = 2;
-    		rc.broadcast(rc.getID(), status);
-    		return rc.readBroadcast(rc.getID());
+    	/**
+    	 * creates broadcasting channels for individual robots (not archons) that have low likelyhood of glitching
+    	 * 
+    	 * @return Robots designated broadcasting
+    	 * @author Nathan Solomon
+    	 * @version V1
+    	 */
+    	public static int getRobotChannel(){
+    		return ((int)(rc.getID()/10)-500);
+    	}
+    	
+    	/**
+    	 * determines gardener strategy
+    	 * 
+    	 * @author Nathan Solomon
+    	 * @version V1
+    	 * @throws GameActionException
+    	 */
+    	public static void setGardenerStatus() throws GameActionException{
+    		//tests if there is already a strategy
+    		if(getStatus() == 0){
+    			Random num = new Random();
+    			int i = num.nextInt(10);
+    			//randomly assigns to strategy
+    			if(i > 5){
+            		int status = 1;
+            		rc.broadcast(getRobotChannel(), status);	
+    			}
+    			else{
+    				int status = 2;
+    				rc.broadcast(getRobotChannel(), status);
+    			}
+    		}
+    	}
+    	
+    	/**
+    	 * getter method to call the stored robots strategy
+    	 * 
+    	 * @author Nathan Solomon
+    	 * @version V1
+    	 * @return Robot Strategy Value
+    	 * @throws GameActionException
+    	 */
+    	public static int getStatus() throws GameActionException{
+    		return (rc.readBroadcast(getRobotChannel()));
     	}
 
 
@@ -600,33 +640,52 @@ public strictfp class RobotPlayer {
     	 * Method to show a gardener how to plant trees in a circle. 
     	 * 
     	 * @author Nathan Solomon
-    	 * @version V1
+    	 * @version V2
     	 * @throws GameActionException
     	 */
 		public static void plantCircle() throws GameActionException{
-			if(determineGardenerStatus() == 1){
-				//try present location (finishes method if can't or shouldn't plant)
-				if(rc.isCircleOccupiedExceptByThisRobot(rc.getLocation(),(2*GameConstants.BULLET_TREE_RADIUS)+(2*RobotType.GARDENER.bodyRadius))){
-					rc.plantTree(Direction.getEast());
-					rc.broadcast(rc.getID(), 2);
-					directionToMove = new Direction(0);
-			
-					
-				}
-			} else if(determineGardenerStatus() == 2) {
+			directionToMove = Direction.getEast();
+			//gets the current strategy status of robot
+			int status = getStatus();
+			if(status == 1){
 				for(int i = 1; i < 6; i++){
 					if(rc.canPlantTree(directionToMove)){
 						rc.plantTree(directionToMove);
-						break;
-					
+						Clock.yield();
+									
 					}
 					else {
+						//rotates to find perfect tree placement.
 						directionToMove = directionToMove.rotateLeftRads((float)(2*Math.PI/5));
 					}
 				}
+				//waters nearby trees
+				waterCircle();
+				Clock.yield();
+				
 			}
-		
+		}
+		/**
+		 * Method to show a gardener how to maintain a tree circle
+		 * 
+		 * @author Nathan Solomon
+		 * @version V1
+		 * @throws GameActionException
+		 */
+		public static void waterCircle() throws GameActionException {
+			//finds nearby trees
+			TreeInfo[] trees = rc.senseNearbyTrees(2);
+			directionToMove = Direction.getEast();
+			//index to water by turn number
+			int directionMultiplier = rc.getRoundNum()%5;
+			
+			//shakes and waters surrounding trees
+			rc.shake(trees[directionMultiplier].location);
+			rc.water(trees[directionMultiplier].location);
+				
+		}
 			
 	
-		}
-}
+	
+	}
+

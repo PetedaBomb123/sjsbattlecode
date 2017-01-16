@@ -2,6 +2,8 @@ package sjsbattlecodeV111;
 import battlecode.common.*;
 import java.util.Random;
 import java.lang.Integer;
+import java.lang.Math;
+import java.math.*;
 
 @SuppressWarnings("unused")
 public strictfp class RobotPlayer {
@@ -217,34 +219,33 @@ public strictfp class RobotPlayer {
                 // See if there are any enemy robots within striking range (distance 1 from lumberjack's radius)
                 RobotInfo[] robots = rc.senseNearbyRobots(GameConstants.LUMBERJACK_STRIKE_RADIUS, enemy);
                 TreeInfo[] trees = rc.senseNearbyTrees(GameConstants.LUMBERJACK_STRIKE_RADIUS);
-
+                System.out.println("1");
                 if(robots.length > 0 && !rc.hasAttacked()) {
                     // Use strike() to hit all nearby robots!
                     rc.strike();
-
+                    System.out.println("2");
                     //new method implementation
-                } else if(trees.length > 0 && !rc.hasAttacked()) {
+                } else if(trees.length > 0 && !rc.hasAttacked() && shouldAttack(trees[0].getTeam())) {
                     //performs tree related actions
-                    lumberjackTrees(trees[0].location, trees[0].containedBullets, trees[0].getTeam(), friendly);
+                	System.out.println("3");
+                		System.out.println("4");
+                        lumberjackTrees(trees[0].location, trees[0].containedBullets);
 
                 } else {
+                	System.out.println("5");
                     // No close robots, so search for robots within sight radius
                     robots = rc.senseNearbyRobots(-1,enemy);
 
                     // If there is a robot, move towards it
+                    System.out.println("6");
                     if(robots.length > 0) {
+                    	System.out.println("7");
                         //moves the robot toward the nearest robot
                         moveTowardObject(robots[0].getLocation());
                     } else {
-                        //No close tree, so search for trees within sight radius
-                        trees = rc.senseNearbyTrees(RobotType.LUMBERJACK.sensorRadius);
-                        if(trees.length > 0) {
-                            //Move toward trees.
-                            moveTowardObject(trees[0].location);
-                        } else {
-                            // Move Randomly
-                            tryMove(randomDirection());
-                        }
+                    	System.out.println("8");
+                        	// Move Randomly
+                        	moveTowardObject(rc.getInitialArchonLocations(enemy)[0]);
 
                     }
                 }
@@ -474,8 +475,7 @@ public strictfp class RobotPlayer {
      * @version V4
      *
      */
-    static void lumberjackTrees(MapLocation location, int containedBullets, Team tree, Team friendly) throws GameActionException{
-        if(tree != friendly){
+    static void lumberjackTrees(MapLocation location, int containedBullets) throws GameActionException{
             //moves toward the nearest tree
             moveTowardObject(location);
             
@@ -487,7 +487,7 @@ public strictfp class RobotPlayer {
                 //chop nearby tree
                 rc.chop(location);
             }
-        }
+        
     }
 
     /**
@@ -611,10 +611,10 @@ public strictfp class RobotPlayer {
     	public static void setGardenerStatus() throws GameActionException{
     		//tests if there is already a strategy
     		if(getStatus() == 0){
-    			Random num = new Random();
-    			int i = num.nextInt(10);
+    			Random generator = new Random();
+    			int num = generator.nextInt(1000);
     			//randomly assigns to strategy
-    			if(i > 5){
+    			if(num < 500){
             		int status = 1;
             		rc.broadcast(getRobotChannel(), status);	
     			}
@@ -685,6 +685,14 @@ public strictfp class RobotPlayer {
 			rc.shake(trees[directionMultiplier].location);
 			rc.water(trees[directionMultiplier].location);
 				
+		}
+		public static boolean shouldAttack(Team Object) {
+			if(Object == rc.getTeam()){
+				return false;
+			}
+			else {
+				return true;
+			}
 		}
 			
 	

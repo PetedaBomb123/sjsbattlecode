@@ -155,7 +155,7 @@ public strictfp class RobotPlayer {
 
 
                 // Move randomly
-                //tryMove(randomDirection());
+                tryMove(randomDirection());
 
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
@@ -206,6 +206,7 @@ public strictfp class RobotPlayer {
     static void runLumberjack() throws GameActionException {
         System.out.println("I'm a lumberjack!");
         Team enemy = rc.getTeam().opponent();
+        Team friendly = rc.getTeam();
 
         // The code you want your robot to perform every round should be in this loop
         while (true) {
@@ -223,10 +224,8 @@ public strictfp class RobotPlayer {
 
                     //new method implementation
                 } else if(trees.length > 0 && !rc.hasAttacked()) {
-                    //moves toward the nearest tree
-                    moveTowardObject(trees[0].location);
                     //performs tree related actions
-                    lumberjackTrees(trees[0].location, trees[0].containedBullets);
+                    lumberjackTrees(trees[0].location, trees[0].containedBullets, trees[0].getTeam(), friendly);
 
                 } else {
                     // No close robots, so search for robots within sight radius
@@ -472,20 +471,23 @@ public strictfp class RobotPlayer {
      *
      * @param tree location from TreeInfo class. Array with information regarding nearby trees
      * @author Nathan Solomon
-     * @version V3
+     * @version V4
      *
      */
-    static void lumberjackTrees(MapLocation location, int containedBullets) throws GameActionException{
-        if(containedBullets > 0){
-            //shake nearby tree
-            rc.shake(location);
+    static void lumberjackTrees(MapLocation location, int containedBullets, Team tree, Team friendly) throws GameActionException{
+        if(tree != friendly){
+            //moves toward the nearest tree
+            moveTowardObject(location);
+            
+        	if(containedBullets > 0){
+                //shake nearby tree
+                rc.shake(location);
 
-        } else {
-            //chop nearby tree
-            rc.chop(location);
+            } else {
+                //chop nearby tree
+                rc.chop(location);
+            }
         }
-
-
     }
 
     /**

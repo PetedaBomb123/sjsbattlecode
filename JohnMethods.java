@@ -16,6 +16,8 @@
  * @throws GameActionException
  * @version V1
  */
+
+/** remove this line
 public static void create*Unit*(Boolean test) throws GameActionException{
 	if(test){
 		rc.build*unit*();
@@ -25,3 +27,4 @@ public static void create*Unit*(Boolean test) throws GameActionException{
 	}
 	
 }
+Remove this line*/

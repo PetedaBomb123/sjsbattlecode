@@ -1,8 +1,9 @@
-package sjsbattlecodeV111;
+package sjsbattlecodeV120;
 import battlecode.common.*;
 import java.util.Random;
 import java.lang.Integer;
-import java.util.ArrayList;
+import java.lang.Math;
+import java.math.*;
 
 @SuppressWarnings("unused")
 public strictfp class RobotPlayer {
@@ -17,10 +18,6 @@ public strictfp class RobotPlayer {
     //boolean to determine whether to make a scout
     private static boolean makeAScout = true;
 
-    //boolean to determine whether it is the first time for a scout
-    private static boolean firstTimeScout = true;
-
-
 
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
@@ -32,13 +29,7 @@ public strictfp class RobotPlayer {
         // and to get information on its current status.
         RobotPlayer.rc = rc;
 
-
-        if(rc.getRoundNum() == 1)
-        {
-            rc.broadcast(0, rc.getRobotCount());
-
-            System.out.println(rc.getRobotCount());
-        }
+        
 
         //setting an inital direction for the robot to move
         if(initialRound == true) {
@@ -95,18 +86,12 @@ public strictfp class RobotPlayer {
 
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
-
-                //First thing the archon does is broadcast its own location
-                broadcastArchonLocation();
-
-
-
-                //Win Donation if possible
-                victoryPoints();
-                //Last round donate
-                if((rc.getRoundLimit()-10) < rc.getRoundNum()){
-                    rc.donate(rc.getTeamBullets()-(rc.getTeamBullets()%10));
-                }
+            	//Win Donation if possible
+            	victoryPoints();
+            	//Last round donate
+            	if((rc.getRoundLimit()-10) < rc.getRoundNum()){
+            		rc.donate(rc.getTeamBullets()-(rc.getTeamBullets()%10));
+            	}
 
                 // Generate a random direction
                 Direction dir = randomDirection();
@@ -119,6 +104,10 @@ public strictfp class RobotPlayer {
                 // Move randomly
                 tryMove(randomDirection());
 
+                // Broadcast archon's location for other robots on the team to know
+                MapLocation myLocation = rc.getLocation();
+                rc.broadcast(0,(int)myLocation.x);
+                rc.broadcast(1,(int)myLocation.y);
 
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
@@ -138,8 +127,8 @@ public strictfp class RobotPlayer {
 
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
-                setGardenerStatus();
-                plantCircle();
+            	setGardenerStatus();
+            	plantCircle();
 
 
 
@@ -151,7 +140,6 @@ public strictfp class RobotPlayer {
                 // Generate a random direction
                 Direction dir = randomDirection();
 
-                //makes a scout only once
                 if(makeAScout == true) {
                     if (rc.canBuildRobot(RobotType.SCOUT, dir)) {
                         rc.buildRobot(RobotType.SCOUT, dir);
@@ -169,7 +157,7 @@ public strictfp class RobotPlayer {
 
 
                 // Move randomly
-                //tryMove(randomDirection());
+                tryMove(randomDirection());
 
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
@@ -220,6 +208,7 @@ public strictfp class RobotPlayer {
     static void runLumberjack() throws GameActionException {
         System.out.println("I'm a lumberjack!");
         Team enemy = rc.getTeam().opponent();
+        Team friendly = rc.getTeam();
 
         // The code you want your robot to perform every round should be in this loop
         while (true) {
@@ -230,36 +219,33 @@ public strictfp class RobotPlayer {
                 // See if there are any enemy robots within striking range (distance 1 from lumberjack's radius)
                 RobotInfo[] robots = rc.senseNearbyRobots(GameConstants.LUMBERJACK_STRIKE_RADIUS, enemy);
                 TreeInfo[] trees = rc.senseNearbyTrees(GameConstants.LUMBERJACK_STRIKE_RADIUS);
-
+                System.out.println("1");
                 if(robots.length > 0 && !rc.hasAttacked()) {
                     // Use strike() to hit all nearby robots!
                     rc.strike();
-
+                    System.out.println("2");
                     //new method implementation
-                } else if(trees.length > 0 && !rc.hasAttacked()) {
-                    //moves toward the nearest tree
-                    moveTowardObject(trees[0].location);
+                } else if(trees.length > 0 && !rc.hasAttacked() && shouldAttack(trees[0].getTeam())) {
                     //performs tree related actions
-                    lumberjackTrees(trees[0].location, trees[0].containedBullets);
+                	System.out.println("3");
+                		System.out.println("4");
+                        lumberjackTrees(trees[0].location, trees[0].containedBullets);
 
                 } else {
+                	System.out.println("5");
                     // No close robots, so search for robots within sight radius
                     robots = rc.senseNearbyRobots(-1,enemy);
 
                     // If there is a robot, move towards it
+                    System.out.println("6");
                     if(robots.length > 0) {
+                    	System.out.println("7");
                         //moves the robot toward the nearest robot
                         moveTowardObject(robots[0].getLocation());
                     } else {
-                        //No close tree, so search for trees within sight radius
-                        trees = rc.senseNearbyTrees(RobotType.LUMBERJACK.sensorRadius);
-                        if(trees.length > 0) {
-                            //Move toward trees.
-                            moveTowardObject(trees[0].location);
-                        } else {
-                            // Move Randomly
-                            tryMove(randomDirection());
-                        }
+                    	System.out.println("8");
+                        	// Move Randomly
+                        	moveTowardObject(rc.getInitialArchonLocations(enemy)[0]);
 
                     }
                 }
@@ -311,384 +297,18 @@ public strictfp class RobotPlayer {
             }
         }
     }
-
-
-    /*THE SCOUT METHOD
-    Basically, the scout will first sense all of the robots nearby it and get the number of enemy and
-    friendly robots. Based on this information, it will prioritize what to do. The one overriding piece
-    of logic the scout has is that if spots an enemy soldier or tank, it will record this soldier or tank
-    on the broadcast, and then run away in the opposite direction. The next priority is if the scout sees
-    another scout. If it sees another scout, it will fire a shot at the scout. If the scout is hit, we will move
-    closer to the scout, if it is not, it will move perpendicularly to it. Next, if the scout senses a gardener,
-    it will fire at the trees that the gardener is forming or shoot the gardener if it is doing anything else.
-    Next, if the scout senses an archon, it will move one step closer depending on the distance it is away from the
-    archon and add the archons location to the broadcast. There is currently no protocol on the lumberjack.
-
-
-
-
-     */
     static void runScout() throws GameActionException {
         System.out.println("I'm a scout");
 
-        //setting a new random generator for the scout
-        Random scoutGenerator = new Random();
-
         while(true) {
 
-            //the first thing that a scout is going to do is check its radius to see if there is an enemy
+            //the first thing that a out is going to do is check its radius to see if there is an enemy
 
             try {
 
                 boolean isTrue = true;
                 int counter = 0;
 
-                //first thing the scout does is find where our closest archon location is, and goes away from it
-                //finds the closest archon - read findClosestArchon method
-                if(firstTimeScout) {
-                    int closestArchon = findClosestArchon();
-                    MapLocation locationOfClosestArchon = new MapLocation((float) rc.readBroadcast(closestArchon), (float) rc.readBroadcast(closestArchon + 1));
-                    Direction directionToArchon = new Direction(rc.getLocation(), locationOfClosestArchon);
-                    directionToMove = directionToArchon.opposite();
-                    firstTimeScout = false;
-                }
-
-
-                //returns an array of all the nearby robots
-                RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
-
-                int numberOfEnemySoldiers = 0;
-                int numberOfEnemyArchons = 0;
-                int numberOfEnemyGardeners = 0;
-                int numberOfEnemyScouts = 0;
-                int numberOfEnemyTanks = 0;
-                int numberOfEnemyLumberjacks = 0;
-                int numberOfAllySoldiers = 0;
-                int numberOfAllyArchons = 0;
-                int numberOfAllyGardeners = 0;
-                int numberOfAllyScouts = 0;
-                int numberOfAllyTanks = 0;
-                int numberOfAllyLumberjacks = 0;
-
-
-                //incrementing the above variables if those types of robots are found
-                for(int i = 0; i<nearbyRobots.length; i++)
-                {
-                    RobotInfo robotInRange = nearbyRobots[i];
-
-                    if(robotInRange.getTeam() == rc.getTeam())
-                    {
-                        RobotType robotInRangeType = robotInRange.getType();
-
-                        if(robotInRangeType == RobotType.ARCHON)
-                        {
-                            numberOfAllyArchons++;
-                        }
-                        else if(robotInRangeType == RobotType.GARDENER)
-                        {
-                            numberOfAllyGardeners++;
-                        }
-                        else if(robotInRangeType == RobotType.LUMBERJACK)
-                        {
-                            numberOfAllyLumberjacks++;
-                        }
-                        else if(robotInRangeType == RobotType.SCOUT)
-                        {
-                            numberOfAllyScouts++;
-                        }
-                        else if(robotInRangeType == RobotType.SOLDIER)
-                        {
-                            numberOfAllySoldiers++;
-                        }
-                        else if(robotInRangeType == RobotType.TANK)
-                        {
-                            numberOfAllyTanks++;
-                        }
-
-                    }
-                    else
-                    {
-                        RobotType robotInRangeType = robotInRange.getType();
-
-                        if(robotInRangeType == RobotType.ARCHON)
-                        {
-                            numberOfEnemyArchons++;
-                        }
-                        else if(robotInRangeType == RobotType.GARDENER)
-                        {
-                            numberOfEnemyGardeners++;
-                        }
-                        else if(robotInRangeType == RobotType.LUMBERJACK)
-                        {
-                            numberOfEnemyLumberjacks++;
-                        }
-                        else if(robotInRangeType == RobotType.SCOUT)
-                        {
-                            numberOfEnemyScouts++;
-                        }
-                        else if(robotInRangeType == RobotType.SOLDIER)
-                        {
-                            numberOfEnemySoldiers++;
-                        }
-                        else if(robotInRangeType == RobotType.TANK)
-                        {
-                            numberOfEnemyTanks++;
-                        }
-
-                    }
-
-                }
-
-
-
-
-                //going through the nearbyRobots array, and depending on the type of robot and number of enemy and ally robots,
-                //this determines what the scout will do
-
-                scoutDecisionLoop:
-                for(int i = 0; i <nearbyRobots.length; i++)
-                {
-                    RobotInfo robotInRange = nearbyRobots[i];
-
-                    //does nothing if scout senses a robot of its own team
-                    if(robotInRange.getTeam() == rc.getTeam())
-                    {
-
-                    }
-                    //if its the other team however...
-                    else
-                    {
-                        //if the sensed robot is an archon- this scout will go to the archon (if there is nothing else nearby)
-                        if(robotInRange.getType() == RobotType.ARCHON)
-                        {
-                            //broadcasting the archon's location
-
-                            MapLocation locationOfArchon = robotInRange.getLocation();
-                            int x = getX(locationOfArchon);
-                            int y = getY(locationOfArchon);
-
-
-                            //getting the number of archons
-                            int numberOfArchons = rc.readBroadcast(0);
-
-                            //if there is one archon, pretty easy, just rebroadcast it's position
-                            if(numberOfArchons == 1)
-                            {
-                                rc.broadcast(17,x);
-                                rc.broadcast(18,y);
-
-                            }
-                            //if there are two archons, this sets the x and y of the robot in range to the closer of the two archons from the broadcast
-                            else if(numberOfArchons == 2)
-                            {
-                                int x1 = rc.readBroadcast(17);
-                                int y1 = rc.readBroadcast(18);
-                                int x2 = rc.readBroadcast(19);
-                                int y2 = rc.readBroadcast(20);
-
-                                double distance1 = Math.sqrt((x-x1)*(x-x1) + (y-y1)*(y-y1));
-                                double distance2 = Math.sqrt((x-x2)*(x-x2) + (y-y2)*(y-y2));
-
-                                if(distance1 < distance2)
-                                {
-                                    rc.broadcast(17,x);
-                                    rc.broadcast(18,y);
-
-                                }
-                                else
-                                {
-                                    rc.broadcast(19,x);
-                                    rc.broadcast(20,y);
-                                }
-
-                            }
-                            //if there are three archons, this will broadcast the robotInRange x and y to the closest of the 6 coordinates
-                            else if(numberOfArchons == 3)
-                            {
-                                int x1 = rc.readBroadcast(17);
-                                int y1 = rc.readBroadcast(18);
-                                int x2 = rc.readBroadcast(19);
-                                int y2 = rc.readBroadcast(20);
-                                int x3 = rc.readBroadcast(21);
-                                int y3 = rc.readBroadcast(22);
-
-                                double distance1 = Math.sqrt((x-x1)*(x-x1) + (y-y1)*(y-y1));
-                                double distance2 = Math.sqrt((x-x2)*(x-x2) + (y-y2)*(y-y2));
-                                double distance3 = Math.sqrt((x-x3)*(x-x3) + (y-y3)*(y-y3));
-
-                                if(distance1 < distance2 && distance1 < distance3)
-                                {
-                                    rc.broadcast(17,x);
-                                    rc.broadcast(18,y);
-
-                                }
-                                else if(distance2 < distance1 && distance2 < distance3)
-                                {
-                                    rc.broadcast(19,x);
-                                    rc.broadcast(20,y);
-                                }
-                                else
-                                {
-                                    rc.broadcast(21,x);
-                                    rc.broadcast(22,y);
-                                }
-                            }
-
-
-                            //if there are no enemy soldiers, tanks, gardeners, and scouts
-                            if(numberOfEnemySoldiers < 1 && numberOfEnemyTanks < 1 && numberOfEnemyGardeners<1 && numberOfEnemyScouts<1 ) {
-                                //getting the distance between the scout and the archon
-                                //DISTANCETO IS A GREAT METHOD USE IT- gets the distance between two map locations
-
-
-                                float distance = rc.getLocation().distanceTo(robotInRange.getLocation());
-
-
-                                //8 is an arbitrary number, it can be changed, however, if the scout is more than 8 away
-                                // from the archon, it will move toward the archon
-                                if (distance > 8) {
-
-                                    //setting directionToMove to where the archon is- if no soldiers are detected,
-                                    // the scout will head in this direction (if the for loop ends)
-                                    directionToMove = new Direction(rc.getLocation(), robotInRange.getLocation());
-
-                                }
-
-                                break scoutDecisionLoop;
-                            }
-
-                        }
-                        else if(robotInRange.getType() == RobotType.GARDENER)
-                        {
-                            //if there are no soldiers or tanks or scouts nearby
-                            //right now, I am just making the scouts try to fire at enemy gardeners and go closer to them
-
-                            if(numberOfEnemySoldiers < 1 && numberOfEnemyTanks < 1 && numberOfEnemyScouts < 1)
-                            {
-                                Direction directionToGardener = new Direction(rc.getLocation(), robotInRange.getLocation());
-
-                                //fires a shot from the location of the scout to the location of the gardener
-                                rc.fireSingleShot(directionToGardener);
-
-                                //getting the distance between the scout and the gardener
-                                float distance = rc.getLocation().distanceTo(robotInRange.getLocation());
-
-                                if(distance > 4)
-                                {
-                                    directionToMove = directionToGardener;
-                                }
-                                else
-                                {
-                                    //if the distance between the scout and enemy gardener is less than 4, than it will pick a random direction perpendicular to the gardener
-                                    int randomNumber = scoutGenerator.nextInt(2);
-
-                                    if(randomNumber == 0)
-                                    {
-                                        directionToMove = directionToGardener.rotateLeftDegrees(90);
-                                    }
-                                    else
-                                    {
-                                        directionToMove = directionToGardener.rotateRightDegrees(90);
-                                    }
-
-
-                                }
-
-                                break scoutDecisionLoop;
-                            }
-
-                        }
-                        else if(robotInRange.getType() == RobotType.SOLDIER)
-                        {
-                            //getting the direction between the scout and soldier
-                            Direction directionToSoldier = new Direction(rc.getLocation(), robotInRange.getLocation());
-                            //getting the distance between teh scout and soldier
-                            float distance = rc.getLocation().distanceTo(robotInRange.getLocation());
-
-                            //if the scout is out of the viewing range of the soldier, it will walk perpendicular to it
-                            if(distance > 7)
-                            {
-                                int randomNumber = scoutGenerator.nextInt(2);
-
-                                if(randomNumber == 0)
-                                {
-                                    directionToMove = directionToSoldier.rotateLeftDegrees(90);
-                                }
-                                else
-                                {
-                                    directionToMove = directionToSoldier.rotateRightDegrees(90);
-                                }
-                            }
-                            //if the scout is within the viewing range of the soldier, it goes in the opposite direction, but at an angle
-                            //to avoid the bullets of the soldier
-                            else
-                            {
-                                directionToMove = directionToSoldier.opposite();
-                                int randomNumber = scoutGenerator.nextInt(2);
-
-                                if(randomNumber == 0)
-                                {
-                                    directionToMove.rotateLeftDegrees(30);
-                                }
-                                else
-                                {
-                                    directionToMove.rotateRightDegrees(30);
-                                }
-
-                            }
-
-                            break scoutDecisionLoop;
-
-                        }
-                        //literally does the exact same thing as the soldier class
-                        else if(robotInRange.getType() == RobotType.TANK)
-                        {
-                            //getting the direction between the scout and tank
-                            Direction directionToTank = new Direction(rc.getLocation(), robotInRange.getLocation());
-                            //getting the distance between the scout and tank
-                            float distance = rc.getLocation().distanceTo(robotInRange.getLocation());
-
-                            //if the scout is out of the viewing range of the tank, it will walk perpendicular to it
-                            if(distance > 7)
-                            {
-                                int randomNumber = scoutGenerator.nextInt(2);
-
-                                if(randomNumber == 0)
-                                {
-                                    directionToMove = directionToTank.rotateLeftDegrees(90);
-                                }
-                                else
-                                {
-                                    directionToMove = directionToTank.rotateRightDegrees(90);
-                                }
-                            }
-                            //if the scout is within the viewing range of the tank, it goes in the opposite direction, but at an angle
-                            //to avoid the bullets of the tank
-                            else
-                            {
-                                directionToMove = directionToTank.opposite();
-                                int randomNumber = scoutGenerator.nextInt(2);
-
-                                if(randomNumber == 0)
-                                {
-                                    directionToMove.rotateLeftDegrees(30);
-                                }
-                                else
-                                {
-                                    directionToMove.rotateRightDegrees(30);
-                                }
-
-                            }
-
-                            break scoutDecisionLoop;
-                        }
-
-
-                    }
-
-
-
-                }
 
 
 
@@ -697,13 +317,13 @@ public strictfp class RobotPlayer {
 
                     if(rc.canMove(directionToMove)) {
                         rc.move(directionToMove);
-                        isTrue = false;
+
                         break;
                     }
                     else
                     {
 
-
+                        directionToMove = directionToMove.rotateLeftRads((float)(Math.PI/2));
                         //if the scout is stopped for some reason, this gets the location of the scout
                         MapLocation location = rc.getLocation();
                         int x = getX(location);
@@ -728,27 +348,6 @@ public strictfp class RobotPlayer {
                         {
                             rc.broadcast(16,y);
                         }
-
-                        //making the scout choose a new random direction to move in
-
-                        int newDirection = scoutGenerator.nextInt(5);
-                        if(newDirection == 1)
-                        {
-                            directionToMove = directionToMove.rotateLeftDegrees(90);
-                        }
-                        else if(newDirection == 2)
-                        {
-                            directionToMove = directionToMove.rotateRightDegrees(90);
-                        }
-                        else if(newDirection == 3)
-                        {
-                            directionToMove = directionToMove.rotateLeftDegrees(135);
-                        }
-                        else
-                        {
-                            directionToMove = directionToMove.rotateRightDegrees(135);
-                        }
-
 
                     }
 
@@ -873,20 +472,22 @@ public strictfp class RobotPlayer {
      *
      * @param tree location from TreeInfo class. Array with information regarding nearby trees
      * @author Nathan Solomon
-     * @version V3
+     * @version V4
      *
      */
     static void lumberjackTrees(MapLocation location, int containedBullets) throws GameActionException{
-        if(containedBullets > 0){
-            //shake nearby tree
-            rc.shake(location);
+            //moves toward the nearest tree
+            moveTowardObject(location);
+            
+        	if(containedBullets > 0){
+                //shake nearby tree
+                rc.shake(location);
 
-        } else {
-            //chop nearby tree
-            rc.chop(location);
-        }
-
-
+            } else {
+                //chop nearby tree
+                rc.chop(location);
+            }
+        
     }
 
     /**
@@ -989,290 +590,111 @@ public strictfp class RobotPlayer {
 
 
     }
-    /**
-     * creates broadcasting channels for individual robots (not archons) that have low likelyhood of glitching
-     *
-     * @return Robots designated broadcasting
-     * @author Nathan Solomon
-     * @version V1
-     */
-    public static int getRobotChannel(){
-        return ((int)(rc.getID()/10)-500);
-    }
-
-    /**
-     * determines gardener strategy
-     *
-     * @author Nathan Solomon
-     * @version V1
-     * @throws GameActionException
-     */
-    public static void setGardenerStatus() throws GameActionException{
-        //tests if there is already a strategy
-        if(getStatus() == 0){
-            Random num = new Random();
-            int i = num.nextInt(10);
-            //randomly assigns to strategy
-            if(i > 5){
-                int status = 1;
-                rc.broadcast(getRobotChannel(), status);
-            }
-            else{
-                int status = 2;
-                rc.broadcast(getRobotChannel(), status);
-            }
-        }
-    }
-
-    /**
-     * getter method to call the stored robots strategy
-     *
-     * @author Nathan Solomon
-     * @version V1
-     * @return Robot Strategy Value
-     * @throws GameActionException
-     */
-    public static int getStatus() throws GameActionException{
-        return (rc.readBroadcast(getRobotChannel()));
-    }
-
-
-    /**
-     * Method to show a gardener how to plant trees in a circle.
-     *
-     * @author Nathan Solomon
-     * @version V2
-     * @throws GameActionException
-     */
-    public static void plantCircle() throws GameActionException{
-        directionToMove = Direction.getEast();
-        //gets the current strategy status of robot
-        int status = getStatus();
-        if(status == 1){
-            for(int i = 1; i < 6; i++){
-                if(rc.canPlantTree(directionToMove)){
-                    rc.plantTree(directionToMove);
-                    Clock.yield();
-
-                }
-                else {
-                    //rotates to find perfect tree placement.
-                    directionToMove = directionToMove.rotateLeftRads((float)(2*Math.PI/5));
-                }
-            }
-            //waters nearby trees
-            waterCircle();
-            Clock.yield();
-
-        }
-    }
-    /**
-     * Method to show a gardener how to maintain a tree circle
-     *
-     * @author Nathan Solomon
-     * @version V1
-     * @throws GameActionException
-     */
-    public static void waterCircle() throws GameActionException {
-        //finds nearby trees
-        TreeInfo[] trees = rc.senseNearbyTrees(2);
-        directionToMove = Direction.getEast();
-        //index to water by turn number
-        int directionMultiplier = rc.getRoundNum()%5;
-
-        //shakes and waters surrounding trees
-        rc.shake(trees[directionMultiplier].location);
-        rc.water(trees[directionMultiplier].location);
-
-    }
-
-    /**
-     * Method so that the archon broadcasts its own location- can only be run by the archon
-     *
-     * @autho Peter Buckman
-     * @version V1
-     * @throws GameActionException
-     */
-
-    public static void broadcastArchonLocation() throws GameActionException
-    {
-        int numberOfArchons = rc.readBroadcast(0);
-        MapLocation locationOfArchon = rc.getLocation();
-
-        int x = getX(locationOfArchon);
-        int y = getY(locationOfArchon);
-
-        if(numberOfArchons == 1)
-        {
-            rc.broadcast(1, x);
-            rc.broadcast(2,y);
-        }
-        else if(numberOfArchons == 2)
-        {
-            int x1 = rc.readBroadcast(1);
-            int y1 = rc.readBroadcast(2);
-            int x2 = rc.readBroadcast(3);
-            int y2 = rc.readBroadcast(4);
-
-            //if any of the 2 sets of broadcasts for the ally archons are 0 (less than 1), then automatically broadcast the archon location to there
-            if(x1<1 && y1<1)
-            {
-                rc.broadcast(1, x);
-                rc.broadcast(2,y);
-                return;
-
-            }
-            else if(x2 < 1 && y2 < 1)
-            {
-                rc.broadcast(3, x);
-                rc.broadcast(4,y);
-                return;
-
-            }
-
-            //get the shortest distance between the x and y coordinate and the previous turns archon locations- broadcast to those channels
-            double distance1 = Math.sqrt((x-x1)*(x-x1) + (y-y1)*(y-y1));
-            double distance2 = Math.sqrt((x-x2)*(x-x2) + (y-y2)*(y-y2));
-
-            if(distance1 < distance2)
-            {
-                rc.broadcast(1, x);
-                rc.broadcast(2,y);
-            }
-            else
-            {
-                rc.broadcast(3, x);
-                rc.broadcast(4,y);
-            }
-
-        }
-        else if(numberOfArchons == 3)
-        {
-            int x1 = rc.readBroadcast(1);
-            int y1 = rc.readBroadcast(2);
-            int x2 = rc.readBroadcast(3);
-            int y2 = rc.readBroadcast(4);
-            int x3 = rc.readBroadcast(5);
-            int y3 = rc.readBroadcast(6);
+    	/**
+    	 * creates broadcasting channels for individual robots (not archons) that have low likelyhood of glitching
+    	 * 
+    	 * @return Robots designated broadcasting
+    	 * @author Nathan Solomon
+    	 * @version V1
+    	 */
+    	public static int getRobotChannel(){
+    		return ((int)(rc.getID()/10)-500);
+    	}
+    	
+    	/**
+    	 * determines gardener strategy
+    	 * 
+    	 * @author Nathan Solomon
+    	 * @version V1
+    	 * @throws GameActionException
+    	 */
+    	public static void setGardenerStatus() throws GameActionException{
+    		//tests if there is already a strategy
+    		if(getStatus() == 0){
+    			Random generator = new Random();
+    			int num = generator.nextInt(1000);
+    			//randomly assigns to strategy
+    			if(num < 500){
+            		int status = 1;
+            		rc.broadcast(getRobotChannel(), status);	
+    			}
+    			else{
+    				int status = 2;
+    				rc.broadcast(getRobotChannel(), status);
+    			}
+    		}
+    	}
+    	
+    	/**
+    	 * getter method to call the stored robots strategy
+    	 * 
+    	 * @author Nathan Solomon
+    	 * @version V1
+    	 * @return Robot Strategy Value
+    	 * @throws GameActionException
+    	 */
+    	public static int getStatus() throws GameActionException{
+    		return (rc.readBroadcast(getRobotChannel()));
+    	}
 
 
-            //if any of the 3 sets of broadcasts for the ally archons are 0 (less than 1), then automatically broadcast the archon location to there
-            if(x1<1 && y1<1)
-            {
-                rc.broadcast(1, x);
-                rc.broadcast(2,y);
-                return;
-            }
-            else if(x2 < 1 && y2 < 1)
-            {
-                rc.broadcast(3, x);
-                rc.broadcast(4,y);
-                return;
-            }
-            else if(x3 < 1 && y3 < 1)
-            {
-                rc.broadcast(5,x);
-                rc.broadcast(6,y);
-            }
-
-
-            //get the shortest distance between the x and y coordinate and the previous turns archon locations- broadcast to those channels
-            double distance1 = Math.sqrt((x-x1)*(x-x1) + (y-y1)*(y-y1));
-            double distance2 = Math.sqrt((x-x2)*(x-x2) + (y-y2)*(y-y2));
-            double distance3 = Math.sqrt((x-x3)*(x-x3) + (y-y3)*(y-y3));
-
-            if(distance1 < distance2 && distance1 < distance3)
-            {
-                rc.broadcast(1, x);
-                rc.broadcast(2,y);
-            }
-            else if(distance2 < distance1 && distance2 < distance3)
-            {
-                rc.broadcast(3, x);
-                rc.broadcast(4,y);
-            }
-            else
-            {
-                rc.broadcast(5, x);
-                rc.broadcast(6,y);
-            }
-        }
-    }
-
-    /**
-     * Method that finds the closest ally archon to you, and returns the broadcast # of the x coordinate of the closest archon
-     *
-     * @author Peter Buckman
-     * @version V1
-     * @returns a 1,3, or 5 representing the x coordinate of the closest archon
-     */
-
-    public static int findClosestArchon() throws GameActionException
-    {
-        int numberOfArchons = rc.readBroadcast(0);
-
-        //if there is only 1 archon, return that
-        if(numberOfArchons == 1)
-        {
-            return 1;
-        }
-        else if(numberOfArchons == 2)
-        {
-            int x = getX(rc.getLocation());
-            int y = getY(rc.getLocation());
-            int x1 = rc.readBroadcast(1);
-            int y1 = rc.readBroadcast(2);
-            int x2 = rc.readBroadcast(3);
-            int y2 = rc.readBroadcast(4);
-
-            double distance1 = Math.sqrt((x-x1)*(x-x1) + (y-y1)*(y-y1));
-            double distance2 = Math.sqrt((x-x2)*(x-x2) + (y-y2)*(y-y2));
-
-            if(distance1 < distance2)
-            {
-                return 1;
-            }
-            else
-            {
-                return 3;
-            }
-        }
-        //if there are 3 archons
-        else
-        {
-            int x = getX(rc.getLocation());
-            int y = getY(rc.getLocation());
-            int x1 = rc.readBroadcast(1);
-            int y1 = rc.readBroadcast(2);
-            int x2 = rc.readBroadcast(3);
-            int y2 = rc.readBroadcast(4);
-            int x3 = rc.readBroadcast(5);
-            int y3 = rc.readBroadcast(6);
-
-
-
-
-            //get the shortest distance between the x and y coordinate and the previous turns archon locations- broadcast to those channels
-            double distance1 = Math.sqrt((x-x1)*(x-x1) + (y-y1)*(y-y1));
-            double distance2 = Math.sqrt((x-x2)*(x-x2) + (y-y2)*(y-y2));
-            double distance3 = Math.sqrt((x-x3)*(x-x3) + (y-y3)*(y-y3));
-
-            if(distance1 < distance2 && distance1 < distance3)
-            {
-                return 1;
-            }
-            else if(distance2 < distance1 && distance2 < distance3)
-            {
-                return 3;
-            }
-            else
-            {
-                return 5;
-            }
-        }
-
-
-    }
-
-}
-
+    	/**
+    	 * Method to show a gardener how to plant trees in a circle. 
+    	 * 
+    	 * @author Nathan Solomon
+    	 * @version V2
+    	 * @throws GameActionException
+    	 */
+		public static void plantCircle() throws GameActionException{
+			directionToMove = Direction.getEast();
+			//gets the current strategy status of robot
+			int status = getStatus();
+			if(status == 1){
+				for(int i = 1; i < 6; i++){
+					if(rc.canPlantTree(directionToMove)){
+						rc.plantTree(directionToMove);
+						Clock.yield();
+									
+					}
+					else {
+						//rotates to find perfect tree placement.
+						directionToMove = directionToMove.rotateLeftRads((float)(2*Math.PI/5));
+					}
+				}
+				//waters nearby trees
+				waterCircle();
+				Clock.yield();
+				
+			}
+		}
+		/**
+		 * Method to show a gardener how to maintain a tree circle
+		 * 
+		 * @author Nathan Solomon
+		 * @version V1
+		 * @throws GameActionException
+		 */
+		public static void waterCircle() throws GameActionException {
+			//finds nearby trees
+			TreeInfo[] trees = rc.senseNearbyTrees(2);
+			directionToMove = Direction.getEast();
+			//index to water by turn number
+			int directionMultiplier = rc.getRoundNum()%5;
+			
+			//shakes and waters surrounding trees
+			rc.shake(trees[directionMultiplier].location);
+			rc.water(trees[directionMultiplier].location);
+				
+		}
+		public static boolean shouldAttack(Team Object) {
+			if(Object == rc.getTeam()){
+				return false;
+			}
+			else {
+				return true;
+			}
+		}
+			
+	
+	
+	}

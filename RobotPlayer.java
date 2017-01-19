@@ -1,4 +1,4 @@
-package sjsbattlecodeV130;
+package sjsbattlecodeV111;
 import battlecode.common.*;
 import java.util.Random;
 import java.lang.Integer;
@@ -103,10 +103,8 @@ public strictfp class RobotPlayer {
                 // Generate a random direction
                 Direction dir = randomDirection();
 
-                // Randomly attempt to build a gardener in this direction
-                if (rc.canHireGardener(dir) && Math.random() < .01) {
-                    rc.hireGardener(dir);
-                }
+                //Builds a gardener, if the conditions are correct
+                createUnit();
 
                 // Move randomly
                 tryMove(randomDirection());
@@ -145,17 +143,16 @@ public strictfp class RobotPlayer {
                 if(makeAScout == true) {
                     if (rc.canBuildRobot(RobotType.SCOUT, dir)) {
                         rc.buildRobot(RobotType.SCOUT, dir);
+                        int scoutCount=rc.readBroadcast(25);
+                        scoutCount++;
+                        rc.broadcast(25, scoutCount);
                     }
 
                     makeAScout = false;
                 }
 
-                // Randomly attempt to build a soldier or lumberjack in this direction
-                if (rc.canBuildRobot(RobotType.SOLDIER, dir) && Math.random() < .01) {
-                    rc.buildRobot(RobotType.SOLDIER, dir);
-                } else if (rc.canBuildRobot(RobotType.LUMBERJACK, dir) && Math.random() < .01 && rc.isBuildReady()) {
-                    rc.buildRobot(RobotType.LUMBERJACK, dir);
-                }
+                //Creates a unit after checking conditions
+                createUnit();
 
 
                 // Move randomly
@@ -1273,5 +1270,119 @@ public strictfp class RobotPlayer {
 
 
     }
+	/**
+	 * @author JohnBoom
+	 * @return void
+	 * @throws GameActionException
+	 * @version V1
+	 */
+	
+    
+    public static void createUnit() throws GameActionException{
+	int treeCount = rc.readBroadcast(29);
+	int soldierCount = rc.readBroadcast(27);
+	int lumberjackCount = rc.readBroadcast(26);
+	int tankCount = rc.readBroadcast(28);
+	int gardenerCount = rc.readBroadcast(24);
+	
+	if(rc.getType()==RobotType.ARCHON) {
+		
+		if(gardenerCount==0) {
+			Direction buildDirection = randomDirection();
+			if(rc.canBuildRobot(RobotType.GARDENER, buildDirection)) {
+				rc.buildRobot(RobotType.GARDENER, buildDirection);
+				gardenerCount++;
+				rc.broadcast(24, gardenerCount);
+				
+			}
+		} else if(treeCount/gardenerCount == 4){	
+			Direction buildDirection = randomDirection();
+			if(rc.canBuildRobot(RobotType.GARDENER, buildDirection)) {
+				rc.buildRobot(RobotType.GARDENER, buildDirection);
+				gardenerCount++;
+				rc.broadcast(24, gardenerCount);
+				
+			}
+		}
+		if(treeCount ==0) {
+			Direction buildDirection = randomDirection();
+			if(rc.canBuildRobot(RobotType.GARDENER, buildDirection)) {
+				rc.buildRobot(RobotType.GARDENER, buildDirection);
+				gardenerCount++;
+				rc.broadcast(24, gardenerCount);
+			}
+		}
+	}
+		if(rc.getType()==RobotType.GARDENER) {
+			Direction buildDirection = findDirection();
+			if(soldierCount==0){
+				if(rc.canBuildRobot(RobotType.SOLDIER, buildDirection)) {
+					rc.buildRobot(RobotType.SOLDIER, buildDirection);
+				soldierCount++;
+				rc.broadcast(27, soldierCount);
+				}
+			} else if(treeCount/soldierCount >=4) {
+				if(rc.canBuildRobot(RobotType.SOLDIER, buildDirection)) {
+					rc.buildRobot(RobotType.SOLDIER, buildDirection);
+				soldierCount++;
+				rc.broadcast(27, soldierCount);
+				}
+			}
+			if (lumberjackCount==0) {
+				if(rc.canBuildRobot(RobotType.LUMBERJACK, buildDirection)) {
+					rc.buildRobot(RobotType.LUMBERJACK, buildDirection);
+					lumberjackCount++;
+					rc.broadcast(26, lumberjackCount);
+					}
+			} else if(treeCount/lumberjackCount>=10){
+				if(rc.canBuildRobot(RobotType.LUMBERJACK, buildDirection)) {
+				rc.buildRobot(RobotType.LUMBERJACK, buildDirection);
+				lumberjackCount++;
+				rc.broadcast(26, lumberjackCount);
+				}
+			
+			
+			}
+			if(rc.getRoundNum()/rc.getRoundLimit()>=.5 && tankCount<2) {
+				if(rc.canBuildRobot(RobotType.TANK, buildDirection)) {
+				rc.buildRobot(RobotType.TANK, buildDirection);
+				tankCount++;
+				rc.broadcast(28, tankCount);
+			}
+		
+		}
+	
+	}
+	
+	
+	
+	
+	
+    }
+    
+    /**
+     * @author johnboom
+     * @version V1
+     * @return Direction
+     * Finds a direction for gardeners to plant their trees
+     */
+    
+    public static Direction findDirection() {
+    	Direction buildDirection = Direction.getEast();
 
+    	for(int i = 1; i < 6; i++){
+            if(rc.canBuildRobot(RobotType.SOLDIER, buildDirection)){
+              //ends the for loop, meaning whichever the direction is it no longer changes
+               break;
+            }
+            else {
+                //rotates to find perfect tree placement.
+                buildDirection = buildDirection.rotateLeftRads((float)(2*Math.PI/5));
+            }
+            
+    }
+		return buildDirection;
+    }
 }
+
+

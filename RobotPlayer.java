@@ -1,4 +1,4 @@
-package sjsbattlecodeV111;
+package sjsbattlecodeV140;
 import battlecode.common.*;
 import java.util.Random;
 import java.lang.Integer;
@@ -91,9 +91,6 @@ public strictfp class RobotPlayer {
             try {
 
                 //First thing the archon does is broadcast its own location
-                broadcastArchonLocation();
-                
-                //Win Donation if possible
                 victoryPoints();
                 //Last round donate
                 if((rc.getRoundLimit()-10) < rc.getRoundNum()){
@@ -127,8 +124,11 @@ public strictfp class RobotPlayer {
 
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
             try {
+            	System.out.print("1");
                 setGardenerStatus();
+                System.out.print("2");
                 plantCircle();
+                System.out.print("3");
 
 
 
@@ -156,7 +156,10 @@ public strictfp class RobotPlayer {
 
 
                 // Move randomly
-                tryMove(randomDirection());
+                if(rc.readBroadcast(getRobotChannel()) == 1){
+                    tryMove(randomDirection());
+                }
+
 
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
@@ -1007,7 +1010,7 @@ public strictfp class RobotPlayer {
                 rc.broadcast(getRobotChannel(), status);
             }
             else{
-                int status = 2;
+                int status = 1;
                 rc.broadcast(getRobotChannel(), status);
             }
         }
@@ -1037,23 +1040,52 @@ public strictfp class RobotPlayer {
         directionToMove = Direction.getEast();
         //gets the current strategy status of robot
         int status = getStatus();
-        if(status == 1){
+        System.out.print(shouldBuildCircle());
+        if(status == 1 && shouldBuildCircle()){
             for(int i = 1; i < 6; i++){
+                if(rc.canPlantTree(directionToMove)){
+                    rc.plantTree(directionToMove);
+                    waterCircle();
+                    Clock.yield();
+
+                }
+                else{
+                    //rotates to find perfect tree placement.
+                    directionToMove = directionToMove.rotateLeftRads((float)(2*Math.PI/5));
+                }
+                rc.broadcast(getRobotChannel(), 2);
+                
+            }
+        }
+        else if(status == 2)
+        {
+        	for(int i = 1; i < 6; i++){
                 if(rc.canPlantTree(directionToMove)){
                     rc.plantTree(directionToMove);
                     Clock.yield();
 
                 }
-                else {
+                else{
                     //rotates to find perfect tree placement.
                     directionToMove = directionToMove.rotateLeftRads((float)(2*Math.PI/5));
                 }
-            }
-            //waters nearby trees
-            waterCircle();
+        	}
+        	waterCircle();
             Clock.yield();
-
         }
+            //waters nearby trees
+            
+
+        
+    }
+    public static boolean shouldBuildCircle() throws GameActionException {
+    	if(rc.getRoundNum() == 1){
+    		return rc.isCircleOccupiedExceptByThisRobot(rc.getLocation(),RobotType.GARDENER.bodyRadius+(2*GameConstants.BULLET_TREE_RADIUS));
+    		
+    	}
+    	else{
+    		return true;
+    	}
     }
     /**
      * Method to show a gardener how to maintain a tree circle
@@ -1287,7 +1319,7 @@ public strictfp class RobotPlayer {
 	
 	if(rc.getType()==RobotType.ARCHON) {
 		
-		if(gardenerCount==0) {
+		if(gardenerCount<10) {
 			Direction buildDirection = randomDirection();
 			if(rc.canBuildRobot(RobotType.GARDENER, buildDirection)) {
 				rc.buildRobot(RobotType.GARDENER, buildDirection);
@@ -1382,6 +1414,10 @@ public strictfp class RobotPlayer {
             
     }
 		return buildDirection;
+    }
+    
+    public static void createGardener() throws GameActionException{
+
     }
 }
 
